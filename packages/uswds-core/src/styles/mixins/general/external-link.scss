@@ -1,3 +1,5 @@
+@use "sass:meta";
+@use "sass:map";
 @use "../../settings" as *;
 @use "./icon" as *;
 @use "../../functions" as *;
@@ -15,18 +17,36 @@ $icon-object: (
   "position-y": center,
 );
 
+$screen-reader-label-configs: (
+  "": $theme-external-link-sr-label-tab-same,
+  '[target="_blank"]': $theme-external-link-sr-label-tab-new,
+);
+
 @mixin external-link($contrast-bg: "default") {
   display: inline;
 
   // Screen reader label
-  &::before {
-    @include sr-only;
-    content: $theme-external-link-sr-label-tab-same;
-  }
+  @each $selector-prefix, $theme-label-config in $screen-reader-label-configs {
+    @if $theme-label-config != false {
+      &#{$selector-prefix}::before {
+        @include sr-only;
+        @if meta.type-of($theme-label-config) == "string" {
+          content: $theme-label-config;
+        } @else {
+          @if map.has-key($theme-label-config, "en") {
+            content: map.get($theme-label-config, "en");
+          }
 
-  &[target="_blank"]::before {
-    @include sr-only;
-    content: $theme-external-link-sr-label-tab-new;
+          @each $locale, $label in $theme-label-config {
+            @if $locale != "en" {
+              [lang="#{$locale}"] & {
+                content: $label;
+              }
+            }
+          }
+        }
+      }
+    }
   }
 
   &::after {
